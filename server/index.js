@@ -21,22 +21,19 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
 // ──────────────────────────────────────────────
-// Initialize AI Services (Google Gemini — Free Tier)
+// Initialize AI Services (Primary: Gemini, Fallbacks: Groq + HF)
 // ──────────────────────────────────────────────
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const HF_TOKEN = process.env.HF_TOKEN;
 
-if (!GEMINI_API_KEY || GEMINI_API_KEY === 'your_gemini_api_key_here') {
-  console.error(
-    '❌ GEMINI_API_KEY is required.\n' +
-    '   Get a FREE API key at: https://aistudio.google.com/apikey\n' +
-    '   Then add it to server/.env'
-  );
-  process.exit(1);
+if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('your_')) {
+  console.warn('⚠️ No Gemini key found. System will run on fallbacks.');
 }
 
-initEmbeddings(GEMINI_API_KEY);
-initLLM(GEMINI_API_KEY);
-console.log('✅ AI services initialized (Google Gemini — Free Tier)');
+initEmbeddings(GEMINI_API_KEY, HF_TOKEN);
+initLLM(GEMINI_API_KEY, GROQ_API_KEY);
+console.log('✅ AI services initialized (Priority: Gemini | Fallback: Groq + HF)');
 
 // ──────────────────────────────────────────────
 // API Routes
@@ -51,21 +48,8 @@ app.get('/api/health', (req, res) => {
 });
 
 // ──────────────────────────────────────────────
-// Error Handler & Production Frontend
+// Error Handler
 // ──────────────────────────────────────────────
-// Serve static files from the React frontend build
-const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
-app.use(express.static(clientDistPath));
-
-// Fallback for all other routes to support React Router (SPA)
-app.get('*', (req, res, next) => {
-  // Don't intercept API calls that weren't found
-  if (req.originalUrl.startsWith('/api')) {
-    return next();
-  }
-  res.sendFile(path.join(clientDistPath, 'index.html'));
-});
-
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ error: err.message || 'Internal server error' });

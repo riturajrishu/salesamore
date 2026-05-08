@@ -10,7 +10,7 @@ export async function retrieveContext(query, options = {}) {
   const {
     topK = 5,
     documentIds = null,
-    minSimilarity = 0.3,
+    minSimilarity = 0.05,
   } = options;
 
   const startTime = Date.now();
@@ -21,10 +21,8 @@ export async function retrieveContext(query, options = {}) {
   // Search vector store
   const results = searchSimilar(queryEmbedding, topK * 2, documentIds);
 
-  // Filter out low-similarity noise
-  const filteredResults = results
-    .filter((r) => r.similarity >= minSimilarity)
-    .slice(0, topK);
+  // Return the closest matching chunks (k-NN) without enforcing a hard threshold
+  const filteredResults = results.slice(0, topK);
 
   // Enrich with document names
   const enrichedResults = filteredResults.map((result) => {

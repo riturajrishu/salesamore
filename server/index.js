@@ -56,6 +56,16 @@ app.use((err, req, res, next) => {
 });
 
 // ──────────────────────────────────────────────
+// Serve Frontend Static Files
+// ──────────────────────────────────────────────
+const clientDistPath = path.join(__dirname, '../client/dist');
+app.use(express.static(clientDistPath));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientDistPath, 'index.html'));
+});
+
+// ──────────────────────────────────────────────
 // Start Server
 // ──────────────────────────────────────────────
 app.listen(PORT, () => {
